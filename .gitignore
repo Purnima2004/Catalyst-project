@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+
+# Virtual environment
+venv/
+.venv/
+env/
+ENV/
+
+# Environment variables — NEVER commit API keys
+.env
+.env.*
+!.env.example
+
+# ChromaDB — large local vector database, regenerated on first run
+chroma_db/
+
+# SQLite candidate store — contains user data
+candidate_store.db
+*.db
+*.sqlite3
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+logs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Model cache downloaded at runtime
+.cache/

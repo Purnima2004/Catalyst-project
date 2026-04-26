@@ -1,0 +1,6 @@
+[server]
+fileWatcherType = "poll"
+folderWatchBlacklist = ["venv", "chroma_db", ".git"]
+
+[logger]
+level = "error"

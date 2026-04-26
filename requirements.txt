@@ -6,3 +6,6 @@ langchain-google-genai
 PyMuPDF
 python-dotenv
 pydantic
+networkx
+chromadb
+sentence-transformers
