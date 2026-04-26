@@ -4,7 +4,15 @@ import os
 from dotenv import load_dotenv
 from langchain_core.messages import HumanMessage, AIMessage
 
+# Load .env for local dev
 load_dotenv()
+
+# On Streamlit Cloud, read the API key from st.secrets and inject into env
+if "GOOGLE_API_KEY" in st.secrets:
+    os.environ["GOOGLE_API_KEY"] = st.secrets["GOOGLE_API_KEY"].strip()
+elif os.environ.get("GOOGLE_API_KEY"):
+    # Strip any accidental leading/trailing whitespace from .env file
+    os.environ["GOOGLE_API_KEY"] = os.environ["GOOGLE_API_KEY"].strip()
 
 from utils.pdf_parser import extract_text_from_pdf
 from data.candidate_store import hash_bytes, get_candidate, save_candidate
