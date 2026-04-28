@@ -10,47 +10,6 @@ Catalyst is a multi-agent AI system built with **LangGraph**, **LangChain**, and
 
 ![Catalyst Multi-Agent Architecture](architecture.png)
 
-### How It Works
-
-The system is a **LangGraph state machine** orchestrating 4 specialised agents:
-
-```
-User Inputs (JD + Resume)
-        │
-        ▼
-┌─────────────────────┐     ┌────────────────────────┐
-│  Skill Extractor    │────▶│  Skill Knowledge Graph │
-│  Agent              │     │  (NetworkX, 50+ skills)│
-└─────────────────────┘     └────────────────────────┘
-        │  Skills to assess (top 3–5)
-        ▼
-┌─────────────────────┐
-│  Interviewer Agent  │◀──── Loop: Next Skill
-│  (Gemini 2.5 Flash) │
-└─────────────────────┘
-        │  Question generated
-        ▼
-┌─────────────────────┐
-│   Human Node        │  ◀── Candidate types answer
-│   (LangGraph pause) │
-└─────────────────────┘
-        │  Answer received
-        ▼
-┌─────────────────────┐
-│  Evaluator Agent    │──── All skills done ───▶
-│  Hybrid Scorer      │                          │
-└─────────────────────┘                          │
-        │  Loop back                             ▼
-        └──────────────────────────────▶ ┌──────────────┐
-                                         │ Mentor Agent │
-                                         │ (Learning    │
-                                         │  Plan)       │
-                                         └──────────────┘
-                                                │
-                                                ▼
-                                    Personalised Learning Plan
-                                      + Score Breakdown
-```
 
 ## Agent Descriptions
 
