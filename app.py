@@ -29,60 +29,54 @@ st.set_page_config(
 # --- CSS ---
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
 
 html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 
-.stApp { background: #0a0f1e; color: #e2e8f0; }
-.stSidebar { background: #0f172a !important; border-right: 1px solid #1e293b; }
+.stApp { background: #0e1117; color: #f4f4f5; }
+.stSidebar { background: #0e1117 !important; border-right: 1px solid #27272a; }
 
 .hero-title {
-    font-size: 2.8rem; font-weight: 700; letter-spacing: -1px;
-    background: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    margin-bottom: 0.2rem;
+    font-size: 2.2rem; font-weight: 600; letter-spacing: -0.02em;
+    color: #ffffff; margin-bottom: 0.2rem;
 }
-.hero-sub { font-size: 1rem; color: #64748b; margin-bottom: 2rem; }
+.hero-sub { font-size: 0.95rem; color: #a1a1aa; font-weight: 300; margin-bottom: 2rem; }
 
 .stButton>button {
-    background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
-    color: white; border: none; border-radius: 10px;
-    font-weight: 600; font-size: 0.95rem; padding: 0.6rem 1.2rem;
-    transition: all 0.25s ease; box-shadow: 0 4px 15px rgba(99,102,241,0.3);
+    background: #18181b; color: #e4e4e7; 
+    border: 1px solid #3f3f46; border-radius: 6px;
+    font-weight: 500; font-size: 0.9rem; padding: 0.5rem 1rem;
+    transition: all 0.2s ease;
 }
 .stButton>button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(99,102,241,0.5);
-    color: white;
+    background: #27272a; border-color: #52525b; color: #ffffff;
 }
 
 [data-testid="stChatMessage"] {
-    background: rgba(30, 41, 59, 0.6);
-    border: 1px solid rgba(99,102,241,0.15);
-    border-radius: 14px; margin-bottom: 12px;
-    backdrop-filter: blur(8px);
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid #27272a;
+    border-radius: 0; padding: 1.5rem 0; margin-bottom: 0;
 }
 
 .score-card {
-    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-    border: 1px solid rgba(99,102,241,0.3);
-    border-radius: 12px; padding: 1rem; margin: 0.5rem 0;
+    background: transparent;
+    border: 1px solid #27272a;
+    border-radius: 6px; padding: 1.2rem; margin: 0.5rem 0;
 }
-.score-bar-container { background: #1e293b; border-radius: 99px; height: 8px; margin: 4px 0; }
-.score-bar { height: 8px; border-radius: 99px; }
+.score-card h4 {
+    font-size: 1rem; font-weight: 500; color: #ffffff; margin-top: 0; margin-bottom: 0.5rem;
+}
+.score-bar-container { background: #27272a; border-radius: 2px; height: 4px; margin: 8px 0; }
+.score-bar { height: 4px; border-radius: 2px; }
 
-.pill-returning {
-    display: inline-block; padding: 0.2rem 0.8rem;
-    background: rgba(16,185,129,0.15); color: #10b981;
-    border: 1px solid rgba(16,185,129,0.3); border-radius: 99px;
-    font-size: 0.8rem; font-weight: 600; margin-bottom: 0.5rem;
+.pill-returning, .pill-new {
+    display: inline-block; padding: 0.15rem 0.5rem;
+    background: transparent; border-radius: 4px;
+    font-size: 0.75rem; font-weight: 500; margin-bottom: 0.5rem;
 }
-.pill-new {
-    display: inline-block; padding: 0.2rem 0.8rem;
-    background: rgba(99,102,241,0.15); color: #818cf8;
-    border: 1px solid rgba(99,102,241,0.3); border-radius: 99px;
-    font-size: 0.8rem; font-weight: 600; margin-bottom: 0.5rem;
-}
+.pill-returning { border: 1px solid rgba(52, 211, 153, 0.4); color: #34d399; }
+.pill-new { border: 1px solid rgba(129, 140, 248, 0.4); color: #818cf8; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -164,16 +158,17 @@ if st.session_state.get("started"):
             evals = state.values.get("evaluations", [])
             for e in evals:
                 pct = int((e["final_score"] / 5.0) * 100)
-                color = "#10b981" if e["final_score"] >= 3.5 else "#f59e0b" if e["final_score"] >= 2.0 else "#ef4444"
+                color = "#34d399" if e["final_score"] >= 3.5 else "#fbbf24" if e["final_score"] >= 2.0 else "#f87171"
                 st.markdown(f"""
 <div class="score-card">
-  <b>{e['skill']}</b> &nbsp;
-  <span style="color:{color};font-weight:600">{e['proficiency']}</span>
-  <span style="float:right;color:#94a3b8">{e['final_score']:.1f}/5</span>
-  <div class="score-bar-container">
-    <div class="score-bar" style="width:{pct}%;background:linear-gradient(90deg,{color},{color}aa)"></div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+    <span style="font-weight:500;color:#f4f4f5">{e['skill']}</span>
+    <span style="color:{color};font-size:0.85rem;font-weight:500">{e['proficiency']} ({e['final_score']:.1f}/5)</span>
   </div>
-  <small style="color:#94a3b8;font-style:italic">{e['reasoning']}</small>
+  <div class="score-bar-container">
+    <div class="score-bar" style="width:{pct}%;background:{color}"></div>
+  </div>
+  <div style="color:#a1a1aa;font-size:0.85rem;margin-top:6px;line-height:1.4;">{e['reasoning']}</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -218,7 +213,7 @@ elif not st.session_state.get("started"):
         st.markdown("""
 <div class="score-card">
   <h4>Skill Knowledge Graph</h4>
-  <p style="color:#94a3b8;font-size:0.9rem">
+  <p style="color:#a1a1aa;font-size:0.85rem;line-height:1.5;">
     50+ skills mapped with relationships. Deterministic gap analysis
     — no LLM hallucinations for skill identification.
   </p>
@@ -227,7 +222,7 @@ elif not st.session_state.get("started"):
         st.markdown("""
 <div class="score-card">
   <h4>Hybrid Scoring Engine</h4>
-  <p style="color:#94a3b8;font-size:0.9rem">
+  <p style="color:#a1a1aa;font-size:0.85rem;line-height:1.5;">
     3-signal evaluation: LLM qualitative score + semantic similarity
     + keyword coverage. Objective and explainable.
   </p>
@@ -236,9 +231,9 @@ elif not st.session_state.get("started"):
         st.markdown("""
 <div class="score-card">
   <h4>RAG Resource Curator</h4>
-  <p style="color:#94a3b8;font-size:0.9rem">
-    Learning plan grounded in 35+ real, curated resources from
-    ChromaDB. No hallucinated links — ever.
+  <p style="color:#a1a1aa;font-size:0.85rem;line-height:1.5;">
+    Learning plan grounded in 35+ real, curated resources.
+    No hallucinated links — ever.
   </p>
 </div>""", unsafe_allow_html=True)
 
