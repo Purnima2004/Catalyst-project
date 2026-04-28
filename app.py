@@ -8,9 +8,13 @@ from langchain_core.messages import HumanMessage, AIMessage
 load_dotenv()
 
 # On Streamlit Cloud, read the API key from st.secrets and inject into env
-if "GOOGLE_API_KEY" in st.secrets:
-    os.environ["GOOGLE_API_KEY"] = st.secrets["GOOGLE_API_KEY"].strip()
-elif os.environ.get("GOOGLE_API_KEY"):
+try:
+    if "GOOGLE_API_KEY" in st.secrets:
+        os.environ["GOOGLE_API_KEY"] = st.secrets["GOOGLE_API_KEY"].strip()
+except Exception:
+    pass  # No secrets file exists (e.g., local development)
+
+if os.environ.get("GOOGLE_API_KEY"):
     # Strip any accidental leading/trailing whitespace from .env file
     os.environ["GOOGLE_API_KEY"] = os.environ["GOOGLE_API_KEY"].strip()
 
