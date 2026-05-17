@@ -12,6 +12,10 @@ from langchain_core.messages import SystemMessage, HumanMessage
 from data.resource_kb import get_resources_for_skill
 from data.skill_graph import get_adjacent_skills, get_prerequisites
 from .state import CatalystState
+from tools.scoring import order_gaps_by_prerequisites
+
+import logging
+logger = logging.getLogger(__name__)
 
 # Lazy-loaded LLM — created on first call, not at import time
 _llm = None
@@ -29,10 +33,13 @@ You are honest about skill gaps and encouraging about growth.
 Format your output in clean Markdown with headers, bullet points, and time estimates.
 """
 
-
 def run(state: CatalystState) -> dict:
     evaluations = state.get("evaluations", [])
     jd = state.get("job_description", "")
+
+    # Temporarily add this at the start of mentor run()
+    for e in evaluations:
+        logger.warning(f"DEBUG SCORE >> {e['skill']}: final_score={e['final_score']}, proficiency={e['proficiency']}")
 
     # Build evaluation summary
     eval_lines = []
@@ -47,12 +54,15 @@ def run(state: CatalystState) -> dict:
     # Build RAG-retrieved resources section
     resource_lines = []
     adjacent_lines = []
+    has_weak_skills = False
+    
     for e in evaluations:
         if e["final_score"] < 3.5:  # Only plan for weak skills
+            has_weak_skills = True
             skill = e["skill"]
-            resources = get_resources_for_skill(skill, top_k=2)
+            resources = get_resources_for_skill(skill, score=e["final_score"], top_k=3)
             if resources:
-                resource_lines.append(f"\n### 📚 Resources for {skill}")
+                resource_lines.append(f"\n### Resources for {skill}")
                 for r in resources:
                     resource_lines.append(
                         f"- [{r['title']}]({r['url']}) · *{r['type']}* · ~{r['hours']}h"
@@ -64,7 +74,12 @@ def run(state: CatalystState) -> dict:
             if adj or prereqs:
                 adjacent_lines.append(f"- **{skill}** → adjacent: {', '.join(adj[:3])}")
 
-    resources_text = "\n".join(resource_lines) if resource_lines else "No specific resources needed — strong across all assessed skills!"
+    if resource_lines:
+        resources_text = "\n".join(resource_lines)
+    elif has_weak_skills:
+        resources_text = "No curated resources found in the knowledge base for these specific skills. Please suggest high-quality official documentation and tutorials."
+    else:
+        resources_text = "No specific resources needed — strong across all assessed skills!"
     adjacent_text = "\n".join(adjacent_lines) if adjacent_lines else ""
 
     prompt = f"""

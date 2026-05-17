@@ -24,7 +24,7 @@ from agents.supervisor import graph
 
 # --- Page Config ---
 st.set_page_config(
-    page_title="Catalyst | AI Skill Assessor",
+    page_title="Impetus | AI Skill Assessor",
     page_icon="C",
     layout="wide",
     initial_sidebar_state="expanded",

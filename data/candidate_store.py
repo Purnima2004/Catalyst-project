@@ -2,6 +2,7 @@ import sqlite3
 import hashlib
 import os
 from datetime import datetime
+import json
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "..", "candidate_store.db")
 
@@ -13,19 +14,21 @@ def _get_conn():
 
 
 def init_db():
-    """Create the candidates table if it doesn't exist."""
     with _get_conn() as conn:
         conn.execute("""
             CREATE TABLE IF NOT EXISTS candidates (
                 resume_hash TEXT PRIMARY KEY,
                 resume_text TEXT NOT NULL,
                 jd_hash     TEXT,
+                jd_text     TEXT,
                 skills      TEXT,
+                scores      TEXT,
                 created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
                 last_seen   DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         """)
         conn.commit()
+
 
 
 def hash_bytes(data: bytes) -> str:
@@ -59,6 +62,26 @@ def save_candidate(resume_hash: str, resume_text: str):
         )
         conn.commit()
 
+def save_scores(resume_hash: str, scores: dict, jd_text: str = None):
+    with _get_conn() as conn:
+        conn.execute(
+            """UPDATE candidates 
+               SET scores = ?, jd_text = ?, last_seen = ?
+               WHERE resume_hash = ?""",
+            (json.dumps(scores), jd_text, datetime.now().isoformat(), resume_hash)
+        )
+        conn.commit()
 
-# Initialize DB on import
+
+def get_scores(resume_hash: str) -> dict | None:
+    with _get_conn() as conn:
+        row = conn.execute(
+            "SELECT scores FROM candidates WHERE resume_hash = ?", (resume_hash,)
+        ).fetchone()
+        if row and row["scores"]:
+            return json.loads(row["scores"])
+    return None
+
+
+
 init_db()

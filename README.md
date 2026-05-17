@@ -1,14 +1,14 @@
-# Catalyst: AI-Powered Skill Assessment & Personalised Learning Plan Agent
+# Impetus: AI-Powered Skill Assessment & Personalised Learning Plan Agent
 
-> A resume tells you what someone *claims* to know — not how well they actually know it. Catalyst bridges that gap.
+> A resume tells you what someone *claims* to know — not how well they actually know it. Impetus bridges that gap.
 
 ## Overview
 
-Catalyst is a multi-agent AI system built with **LangGraph**, **LangChain**, and **Gemini 2.5 Flash**. It takes a Job Description and a candidate's resume, identifies the most critical skill gaps, conducts a real conversational technical interview, and generates a personalised learning plan grounded in curated resources.
+Impetus is a multi-agent AI system built with **LangGraph**, **LangChain**, and **Gemini 2.5 Flash**. It takes a Job Description and a candidate's resume, identifies the most critical skill gaps, conducts a real conversational technical interview, and generates a personalised learning plan grounded in curated resources.
 
 ## Architecture
 
-![Catalyst Multi-Agent Architecture](architecture.png)
+![Impetus Multi-Agent Architecture](architecture.png)
 
 
 ## Agent Descriptions
@@ -32,7 +32,7 @@ Answers are evaluated using a weighted combination of three independent signals:
 
 ## The "Hybrid Brain" — Beyond Pure LLM
 
-Catalyst deliberately avoids relying solely on an LLM for every decision:
+Impetus deliberately avoids relying solely on an LLM for every decision:
 
 - **Skill Knowledge Graph** (NetworkX) — 50+ skills mapped with prerequisites and adjacency. Skill identification is deterministic — no hallucination.
 - **Candidate Knowledge Base** (SQLite) — Resume text is cached by MD5 hash. Returning users get instant loading without re-parsing.
@@ -42,8 +42,8 @@ Catalyst deliberately avoids relying solely on an LLM for every decision:
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/Purnima2004/Catalyst-project.git
-   cd Catalyst-project
+   git clone https://github.com/Purnima2004/Impetus-project.git
+   cd Impetus-project
    ```
 
 2. **Create a virtual environment and install dependencies:**
