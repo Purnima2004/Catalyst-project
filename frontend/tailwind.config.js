@@ -7,11 +7,22 @@ export default {
   theme: {
     extend: {
       colors: {
-        background: '#131313',
-        primaryText: '#F0F0F0',
-        accent1: '#14c2ed',
-        accent2: '#ff6abc',
-        cta: '#405843'
+        background: '#070815',
+        primaryText: '#F8FAFC',
+        accent1: '#4c68f7',
+        accent2: '#C030FF',
+        cta: '#9142f2'
+      },
+      animation: {
+        blob: "blob 10s infinite",
+      },
+      keyframes: {
+        blob: {
+          "0%": { transform: "translate(0px, 0px) scale(1)" },
+          "33%": { transform: "translate(30px, -50px) scale(1.1)" },
+          "66%": { transform: "translate(-20px, 20px) scale(0.9)" },
+          "100%": { transform: "translate(0px, 0px) scale(1)" },
+        },
       }
     },
   },

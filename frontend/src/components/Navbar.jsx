@@ -40,7 +40,7 @@ export default function Navbar() {
                 className={`relative px-4 py-1.5 rounded-full text-sm font-bold
                             transition-all duration-300
                             ${active
-                              ? 'text-background bg-accent1 shadow-[0_0_15px_rgba(0,229,255,0.4)]'
+                              ? 'text-white bg-accent1 shadow-[0_0_15px_rgba(99,64,255,0.4)]'
                               : 'text-primaryText/40 hover:text-primaryText hover:bg-white/5'}`}
               >
                 <span className="hidden sm:inline">{step.label}</span>

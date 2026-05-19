@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Trophy, BookOpen, RotateCcw, TrendingUp } from 'lucide-react'
 import Navbar from '../components/Navbar.jsx'
+import MarkdownRenderer from '../components/MarkdownRenderer.jsx'
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -25,9 +26,9 @@ function ScoreBar({ score, color }) {
 }
 
 function getProficiencyColor(score) {
-  if (score >= 3.5) return '#8bd6e9'  // accent1
-  if (score >= 2.0) return '#e0b84d'  // amber
-  return '#d23e8f'                     // accent2
+  if (score >= 3.5) return '#6340FF'  // accent1
+  if (score >= 2.0) return '#2563EB'  // cta
+  return '#C030FF'                    // accent2
 }
 
 export default function ResultsPage() {
@@ -55,13 +56,11 @@ export default function ResultsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-primaryText">
+    <div className="min-h-screen text-primaryText">
       <Navbar />
 
       {/* Glow */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute top-0 right-1/4 w-[600px] h-[600px]
-                        rounded-full bg-accent2/8 blur-[120px]" />
       </div>
 
       <main className="relative z-10 max-w-6xl mx-auto px-6 pt-28 pb-20">
@@ -145,15 +144,9 @@ export default function ResultsPage() {
                 <BookOpen size={17} className="text-accent2" />
                 Personalised Learning Plan
               </h2>
-              <div className="p-7 rounded-2xl border border-white/8 bg-white/3
-                              prose prose-invert prose-sm max-w-none
-                              prose-headings:text-primaryText prose-headings:font-semibold
-                              prose-p:text-primaryText/60 prose-p:leading-relaxed
-                              prose-li:text-primaryText/60 prose-a:text-accent1">
+              <div className="p-7 rounded-2xl border border-white/8 bg-white/3 max-w-none">
                 {learning_plan
-                  ? <pre className="whitespace-pre-wrap font-sans text-sm text-primaryText/70 leading-relaxed">
-                      {learning_plan}
-                    </pre>
+                  ? <MarkdownRenderer content={learning_plan} />
                   : <p className="text-primaryText/30 italic">No learning plan generated.</p>}
               </div>
             </motion.div>

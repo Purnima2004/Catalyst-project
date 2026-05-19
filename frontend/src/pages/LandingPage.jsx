@@ -39,16 +39,11 @@ export default function LandingPage() {
   const navigate = useNavigate()
 
   return (
-    <div className="min-h-screen bg-background text-primaryText overflow-hidden relative">
+    <div className="min-h-screen text-primaryText overflow-hidden relative">
       <Navbar />
 
       {/* ── Background Depth ── */}
       <div className="pointer-events-none absolute inset-0">
-        {/* Main Radial Glow */}
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-accent1/10 blur-[120px]" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-accent2/10 blur-[120px]" />
-        {/* Center Mesh */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.02)_0%,transparent_100%)]" />
       </div>
 
       <Navbar />
@@ -73,7 +68,7 @@ export default function LandingPage() {
           >
             What's holding you back?{' '}
             <span className="text-transparent bg-clip-text
-                             bg-gradient-to-r from-accent1 to-accent2">
+                             bg-gradient-to-r from-cyan-400 to-fuchsia-400">
               Let's find out.
             </span>
           </motion.h1>
@@ -92,13 +87,13 @@ export default function LandingPage() {
             <motion.button
               whileHover={{
                 scale: 1.05,
-                boxShadow: '0 0 40px rgba(0,229,255,0.4)'
+                boxShadow: '0 0 40px rgba(99,64,255,0.4)'
               }}
               whileTap={{ scale: 0.97 }}
               onClick={() => navigate('/setup')}
               className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl
-                         bg-accent1 text-background font-bold text-lg
-                         shadow-[0_0_20px_rgba(0,229,255,0.2)]
+                         bg-accent1 text-white font-bold text-lg
+                         shadow-[0_0_20px_rgba(99,64,255,0.2)]
                          transition-all duration-300 hover:brightness-110"
             >
               Start Your Assessment
@@ -191,11 +186,11 @@ export default function LandingPage() {
             Upload your resume, paste a job description, and let Impetus do the rest.
           </p>
           <motion.button
-            whileHover={{ scale: 1.05, boxShadow: '0 0 32px rgba(0,77,97,0.5)' }}
+            whileHover={{ scale: 1.05, boxShadow: '0 0 32px rgba(99,64,255,0.5)' }}
             whileTap={{ scale: 0.97 }}
             onClick={() => navigate('/setup')}
             className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl
-                       bg-accent1 text-background font-semibold transition-shadow duration-300"
+                       bg-accent1 text-white font-semibold transition-shadow duration-300"
           >
             Get Started <ArrowRight size={18} />
           </motion.button>

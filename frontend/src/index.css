@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Force update 2 */
+/* Force update 3 */
 
 .dummy-class-for-vite-cache-busting {
   color: red;

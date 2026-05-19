@@ -254,45 +254,16 @@ def get_resources_for_skill(skill: str, score: float = 0.0, top_k: int = 3) -> l
     return resources[:count]
 
 
+from data.chroma_store import get_semantic_score
+
 def get_semantic_similarity(answer: str, skill: str,
                              target_text: str = "") -> float:
     """
-    Compute cosine similarity between the candidate's answer and a reference text.
-
-    If target_text is provided (from the intent extractor), it is used as the
-    comparison target instead of the generic gold-standard answer. This makes
-    scoring question-specific.
-
-    Falls back to the skill's gold-standard answer if no target_text is given.
+    Compute semantic similarity between the candidate's answer and expert references.
+    
+    Delegates to the ChromaDB multi-reference store. target_text is ignored
+    in the new architecture as we use multiple curated references per skill.
     Returns a score in [0.0, 1.0].
     """
-    # Prefer question-derived target over generic gold standard
-    gold = target_text if target_text else _GOLD_ANSWERS.get(skill, "")
-    if not gold or not answer.strip():
-        return 0.5  # neutral score if no reference exists
-
-    try:
-        model = _get_model()
-        embeddings = model.encode([answer, gold], normalize_embeddings=True)
-        # Cosine similarity = dot product of normalised vectors
-        raw_sim = float(np.dot(embeddings[0], embeddings[1]))
-
-        # ── Rescale raw cosine to a proficiency score ────────────────────────
-        # Sentence-transformers cosine similarity has a practical range of
-        # ~[0.2, 0.8] for technical text:
-        #   0.2  = unrelated topic          → proficiency 0.0
-        #   0.45 = on-topic but shallow     → proficiency ~0.4
-        #   0.60 = strong relevant answer   → proficiency ~0.7
-        #   0.75 = near-perfect coverage    → proficiency ~1.0
-        #   0.80+= paraphrase-level         → proficiency 1.0
-        #
-        # Raw cosine fed directly as 0-1 permanently caps expert answers at
-        # ~0.65, making it impossible to score above 3.5/5.
-        FLOOR = 0.20   # below this = completely unrelated
-        CEIL  = 0.75   # above this = treat as perfect match
-        rescaled = (raw_sim - FLOOR) / (CEIL - FLOOR)
-
-        return round(max(0.0, min(1.0, rescaled)), 3)
-    except Exception:
-        return 0.5  # graceful fallback
+    return get_semantic_score(answer, skill)
 

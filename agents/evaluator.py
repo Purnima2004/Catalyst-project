@@ -25,15 +25,21 @@ def _get_llm():
     return _llm
 
 _SYSTEM_PROMPT = """
-You are an expert technical assessor. You evaluate interview answers strictly, honestly,
-and objectively. No sugarcoating. You score from 0 to 5:
-  0 = No knowledge / completely wrong
-  1 = Aware of concept but no real experience
-  2 = Basic usage, limited depth
-  3 = Solid understanding, some gaps
-  4 = Strong practical experience
-  5 = Expert-level, deep nuanced knowledge
-Provide a score and concise reasoning (2 sentences max).
+You are a strict technical interview assessor. Score this answer from 0 to 5.
+
+Skill being assessed: {skill}
+Interview question: {question}
+Candidate's answer: {answer}
+
+Scoring rubric:
+- 5: Expert level, production tradeoffs, edge cases, best practices
+- 4: Strong, correct approach, minor gaps
+- 3: Correct basics, missing depth or real-world application
+- 2: Partial understanding, some correct concepts mixed with gaps
+- 1: Aware of topic but minimal real knowledge
+- 0: Wrong, off-topic, or no answer
+
+Reply with ONLY valid JSON: {{"score": <number 0-5>, "reason": "<one sentence>"}}
 """
 
 
@@ -45,15 +51,19 @@ class _LLMEvaluation(BaseModel):
 
 def _gemini_score(answer: str, skill: str, question: str = "") -> float:
     """
-    LLM fallback scorer — called only when intent confidence is low
-    or semantic/keyword signals strongly disagree.
-    Includes the original interview question for context-aware scoring.
+    LLM primary scorer — provides the main qualitative assessment.
     """
     structured_llm = _get_llm().with_structured_output(_LLMEvaluation)
-    question_ctx = f"Interview question asked:\n{question}\n\n" if question else ""
-    eval_prompt = f"Skill being assessed: {skill}\n\n{question_ctx}Candidate answer:\n{answer}"
+    
+    # We now format the system prompt dynamically with the context
+    eval_prompt = _SYSTEM_PROMPT.format(
+        skill=skill,
+        question=question if question else "Not provided.",
+        answer=answer
+    )
+    
     result = structured_llm.invoke([
-        SystemMessage(content=_SYSTEM_PROMPT),
+        SystemMessage(content="You are a strict technical evaluator. Output only JSON."),
         HumanMessage(content=eval_prompt)
     ])
     return result.score / 5.0  # normalize to 0-1 for scoring_engine
@@ -91,7 +101,6 @@ def run(state: CatalystState) -> dict:
         return _gemini_score(answer, skill, question=question_text)
 
     # Question-aware hybrid scoring
-    # Intent extractor uses the question to derive specific targets
     scores = score_answer(answer_text, current_skill,
                           question=question_text,
                           gemini_fn=_gemini_score_with_ctx)
@@ -100,12 +109,19 @@ def run(state: CatalystState) -> dict:
     final_5 = round(scores["final_score"] * 5, 2)
     sem_5   = round(scores["semantic"] * 5, 2)
     kw_5    = round(scores["keyword"] * 5, 2)
-    llm_5   = round((scores["llm"] * 5), 2) if scores["llm"] else None
+    llm_5   = round((scores["llm"] * 5), 2) if scores["llm"] is not None else None
 
     proficiency = score_to_proficiency(final_5)
-    intent_flag = "✓ question-aware" if scores.get("intent_used") else "gold-standard"
+    
+    if scores.get("gated"):
+        mode_str = "gated (fast pass/fail)"
+        llm_val = "Skipped"
+    else:
+        mode_str = "LLM-primary (20/20/60)"
+        llm_val = f"{llm_5}/5"
+        
     reasoning = (f"Semantic: {sem_5}/5 | Keyword: {kw_5}/5 | "
-                 f"LLM called: {scores['llm_called']} | Mode: {intent_flag}")
+                 f"LLM: {llm_val} | Mode: {mode_str}")
 
     evaluation = SkillEvaluation(
         skill=current_skill,

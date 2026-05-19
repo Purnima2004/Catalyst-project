@@ -62,13 +62,11 @@ export default function SetupPage() {
   const canStart = resumeData && jobDescription.trim().length > 50 && status === 'idle'
 
   return (
-    <div className="min-h-screen bg-background text-primaryText">
+    <div className="min-h-screen text-primaryText">
       <Navbar />
 
       {/* Glow */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute top-0 left-1/4 w-[500px] h-[500px]
-                        rounded-full bg-accent1/8 blur-[120px]" />
       </div>
 
       <main className="relative z-10 max-w-3xl mx-auto px-6 pt-32 pb-20">
@@ -182,14 +180,14 @@ export default function SetupPage() {
           {/* Start Button */}
           <motion.div variants={fadeUp}>
             <motion.button
-              whileHover={canStart ? { scale: 1.03, boxShadow: '0 0 32px rgba(0,77,97,0.45)' } : {}}
+              whileHover={canStart ? { scale: 1.03, boxShadow: '0 0 32px rgba(99,64,255,0.45)' } : {}}
               whileTap={canStart ? { scale: 0.97 } : {}}
               onClick={handleStart}
               disabled={!canStart}
               className={`w-full flex items-center justify-center gap-3 py-4 rounded-xl
                          font-semibold text-base transition-all duration-300
                          ${canStart
-                           ? 'bg-accent1 text-background cursor-pointer'
+                           ? 'bg-accent1 text-white cursor-pointer'
                            : 'bg-white/5 text-primaryText/25 cursor-not-allowed'}`}
             >
               {status === 'starting'

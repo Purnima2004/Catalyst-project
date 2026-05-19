@@ -2,44 +2,83 @@
 import re
 from data.skill_graph import SKILL_KEYWORDS, get_prerequisites
 from data.resource_kb import get_semantic_similarity
-from tools.intent_extractor import extract_intent
+
 
 NEGATION_WORDS = {"not", "never", "don't", "doesn't", "didn't", "no", "without", "avoid"}
+
+
+def _keyword_hit(kw_lower: str, answer_lower: str) -> bool:
+    """
+    Flexible keyword match that handles three cases:
+      1. Single-word keywords  → strict word boundary (\b)
+      2. Multi-word phrases    → phrase present anywhere in text (no boundary needed
+                                 since spaces already delimit naturally)
+      3. Prefix matches        → e.g. "pg_stat" matches "pg_stat_statements"
+                                 because underscore is a word char and \b fails.
+                                 We do a simple substring check for tokens
+                                 that contain underscores.
+    Negation check is applied only for single-word keywords (phrase negation is
+    too rare to be worth the complexity).
+    """
+    if kw_lower not in answer_lower:
+        return False, False   # (hit, negated)
+
+    # Underscore-containing tokens (e.g. pg_stat, pg_locks): substring is enough
+    if "_" in kw_lower:
+        return True, False
+
+    # Multi-word phrase: presence in text is sufficient
+    if " " in kw_lower:
+        # Check negation: look at the 3 words before the phrase
+        idx = answer_lower.find(kw_lower)
+        preceding = answer_lower[:idx].split()[-3:]
+        negated = any(neg in preceding for neg in NEGATION_WORDS)
+        return True, negated
+
+    # Single word: require word boundary
+    match = re.search(rf'\b{re.escape(kw_lower)}\b', answer_lower)
+    if not match:
+        return False, False
+    preceding = answer_lower[:match.start()].split()[-3:]
+    negated = any(neg in preceding for neg in NEGATION_WORDS)
+    return True, negated
 
 
 def compute_keyword_score(answer: str, skill: str,
                           dynamic_keywords: list[str] | None = None) -> float:
     """
-    Keyword score with negation detection — 0 to 1.
-
-    If dynamic_keywords are provided (from intent extractor), they take
-    priority over the static SKILL_KEYWORDS for this skill. This makes
-    scoring question-specific rather than generically skill-based.
+    Keyword score with negation detection and flexible matching — 0 to 1.
     """
-    keywords = dynamic_keywords if dynamic_keywords else SKILL_KEYWORDS.get(skill, [])
+    keywords = dynamic_keywords
+    if not keywords:
+        keywords = SKILL_KEYWORDS.get(skill)
+        
+    # Fallback for combined names like "Advanced SQL & Database Design"
+    if not keywords:
+        for known_skill, kw_list in SKILL_KEYWORDS.items():
+            if known_skill.lower() in skill.lower():
+                keywords = kw_list
+                break
+
     if not keywords:
         return 0.5
 
-    # Cap keyword list to prevent score dilution when multiple intent
-    # triggers combine (e.g. a Webpack question matching 4 patterns
-    # could produce 20+ keywords, making 5 matches look like 25%)
-    MAX_KEYWORDS = 10
+    MAX_KEYWORDS = 15
     keywords = keywords[:MAX_KEYWORDS]
 
     answer_lower = answer.lower()
-    score = 0
+    score = 0.0
     for kw in keywords:
         kw_lower = kw.lower()
-        if kw_lower not in answer_lower:
-            continue
-        match = re.search(rf'\b{re.escape(kw_lower)}\b', answer_lower)
-        if match:
-            preceding = answer_lower[:match.start()].split()[-3:]
-            if any(neg in preceding for neg in NEGATION_WORDS):
-                score -= 0.5  # penalize negated mentions
-            else:
-                score += 1
-    return round(max(0.0, min(1.0, score / len(keywords))), 3)
+        hit, negated = _keyword_hit(kw_lower, answer_lower)
+        if hit:
+            score += -0.5 if negated else 1.0
+
+    # You don't need to hit every single keyword to be an expert.
+    # Hitting ~40% of the relevant keywords in a short answer is excellent.
+    expected_hits = min(len(keywords), 5)
+    
+    return round(max(0.0, min(1.0, score / expected_hits)), 3)
 
 
 def order_gaps_by_prerequisites(gaps: list[str]) -> list[str]:
@@ -47,6 +86,32 @@ def order_gaps_by_prerequisites(gaps: list[str]) -> list[str]:
         prereqs = get_prerequisites(skill)
         return sum(1 for p in prereqs if p in gaps)
     return sorted(gaps, key=prereq_count)
+
+
+def quick_gate(answer: str, skill: str) -> float | None:
+    """
+    Fast pass/fail for obvious cases.
+    Returns a 0-1 score, or None to proceed to full pipeline.
+    """
+    answer_stripped = answer.strip()
+    if len(answer_stripped) < 50:
+        return 0.15   # ~0.75/5 — too short
+
+    keywords = SKILL_KEYWORDS.get(skill, [])
+    if not keywords:
+        return None   # unknown skill — let LLM handle it
+
+    answer_lower = answer.lower()
+    hits = sum(1 for kw in keywords if kw.lower() in answer_lower)
+    hit_ratio = hits / len(keywords)
+
+    if hit_ratio >= 0.70:
+        return 0.82   # ~4.1/5 — clearly an expert
+
+    if hits == 0 and len(answer_stripped) < 200:
+        return 0.15   # ~0.75/5 — short answer with zero keywords
+
+    return None
 
 
 def score_answer(answer: str, skill: str, question: str = "",
@@ -59,106 +124,51 @@ def score_answer(answer: str, skill: str, question: str = "",
 def compute_hybrid_score(llm_score: float, skill: str, answer: str,
                          question: str = "", gemini_fn=None) -> dict:
     """
-    Question-aware Hybrid Scoring Engine.
-
-    Flow:
-      1. If a question is provided, extract its intent deterministically.
-      2. Use question-specific target + keywords for semantic/keyword scoring.
-      3. LLM is only called when intent confidence is LOW (question was vague /
-         no triggers matched) OR when semantic and keyword strongly disagree.
-      4. Fall back to generic gold-standard + SKILL_KEYWORDS if no question given.
-
-    Weights:
-      Semantic similarity : 50%
-      Keyword coverage    : 30%
-      LLM score           : 20%  (only when needed — saves API quota)
+    3-layer scoring:
+      1. Quick Gate  — instant score for obvious pass/fail (no LLM call)
+      2. Full Pipeline:
+           Semantic  20%  — ChromaDB multi-reference cosine similarity
+           Keyword   20%  — flexible term coverage
+           LLM       60%  — primary qualitative assessor
     """
-    intent_used = False
-    confidence = 0.0
-    dynamic_keywords: list[str] | None = None
+    gated_score = quick_gate(answer, skill)
+    if gated_score is not None:
+        return {
+            "llm": None,
+            "semantic": gated_score,
+            "keyword": gated_score,
+            "final_score": gated_score,
+            "llm_called": False,
+            "intent_used": False,
+            "confidence": 1.0,
+            "gated": True
+        }
 
-    # ── Step 1: Extract question intent (deterministic, no LLM) ──────────────
-    # Always compute gold-standard semantic as a baseline safety net
-    gold_semantic = get_semantic_similarity(answer, skill)
+    semantic_score = get_semantic_similarity(answer, skill)
+    keyword_score  = compute_keyword_score(answer, skill)
 
-    if question:
-        intent = extract_intent(question, skill)
-        confidence = intent["confidence"]
-
-        if intent["target_text"]:
-            # Question-specific semantic target
-            intent_semantic = get_semantic_similarity(
-                answer, skill, target_text=intent["target_text"]
-            )
-            # Take the BETTER of the two scores.
-            # If our intent reference is wrong for this question type
-            # (e.g. Enzyme debounce ref vs lifecycle question), the gold
-            # standard catches it. If the intent ref is spot-on, it wins.
-            semantic_score = max(intent_semantic, gold_semantic)
-
-            # Merge dynamic keywords with static ones (deduped, capped)
-            static_kw = SKILL_KEYWORDS.get(skill, [])
-            merged = list(intent["keywords"])
-            for kw in static_kw:
-                if kw not in merged:
-                    merged.append(kw)
-            dynamic_keywords = merged  # capping happens in compute_keyword_score
-
-            intent_used = True
-        else:
-            # Intent extractor found no triggers — fall back to gold standard
-            semantic_score = gold_semantic
-    else:
-        semantic_score = gold_semantic
-
-    # ── Step 2: Keyword scoring ───────────────────────────────────────────────
-    keyword_score = compute_keyword_score(answer, skill,
-                                          dynamic_keywords=dynamic_keywords)
-
-    # ── Step 3: Decide whether to call LLM ───────────────────────────────────
     llm_normalized = llm_score / 5.0
     llm_called = False
 
-    agreement = abs(semantic_score - keyword_score)
-    zero_confidence = confidence == 0.0     # intent extractor understood nothing
-    low_confidence  = confidence < 0.5      # partial understanding
-
     if gemini_fn:
-        if zero_confidence:
-            # Complete intent failure — deterministic scoring is unreliable.
-            # The question may not even match the skill (e.g. A/B testing
-            # question scored as "Jest"). LLM is the only signal that can
-            # understand the question-answer pair in context.
-            llm_normalized = gemini_fn(answer, skill)
-            llm_called = True
-            # Elevate LLM weight since semantic/keyword used wrong references
-            weighted = (
-                0.20 * semantic_score +
-                0.10 * keyword_score +
-                0.70 * llm_normalized
-            )
-        elif low_confidence and agreement >= 0.25:
-            # Partial intent match + disagreeing signals — LLM tiebreaker
-            llm_normalized = gemini_fn(answer, skill)
-            llm_called = True
+        llm_normalized = gemini_fn(answer, skill)
+        llm_called = True
 
-    # ── Step 4: Weighted combination ─────────────────────────────────────────
-    if not (zero_confidence and llm_called):
-        # Normal weighting (intent extractor worked or LLM wasn't called)
-        weighted = (
-            0.50 * semantic_score +
-            0.30 * keyword_score +
-            0.20 * llm_normalized
-        )
+    weighted = (
+        0.20 * semantic_score +
+        0.20 * keyword_score +
+        0.60 * llm_normalized
+    )
 
     return {
-        "llm":            round(llm_normalized, 3),
-        "semantic":       round(semantic_score, 3),
-        "keyword":        round(keyword_score, 3),
-        "final_score":    round(weighted, 3),
-        "llm_called":     llm_called,
-        "intent_used":    intent_used,
-        "confidence":     confidence,
+        "llm":         round(llm_normalized, 3) if llm_called else None,
+        "semantic":    round(semantic_score, 3),
+        "keyword":     round(keyword_score, 3),
+        "final_score": round(weighted, 3),
+        "llm_called":  llm_called,
+        "intent_used": False,
+        "confidence":  1.0,
+        "gated":       False
     }
 
 

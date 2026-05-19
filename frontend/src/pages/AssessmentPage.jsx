@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Send, Loader2, Bot, User, ChevronRight } from 'lucide-react'
 import Navbar from '../components/Navbar.jsx'
 import { sendChat } from '../services/api.js'
+import MarkdownRenderer from '../components/MarkdownRenderer.jsx'
 
 export default function AssessmentPage() {
   const navigate = useNavigate()
@@ -60,11 +61,11 @@ export default function AssessmentPage() {
   const currentSkill = skills_to_assess[current_skill_index]
 
   return (
-    <div className="min-h-screen bg-background text-primaryText flex flex-col">
+    <div className="min-h-screen text-primaryText flex flex-col">
       <Navbar />
 
       {/* Fixed progress bar under navbar */}
-      <div className="fixed top-[65px] inset-x-0 z-40 bg-background border-b border-white/5 px-6 py-3">
+      <div className="fixed top-[65px] inset-x-0 z-40 bg-background/80 backdrop-blur-md border-b border-white/5 px-6 py-3">
         <div className="max-w-3xl mx-auto flex items-center gap-4">
           <div className="flex-1 h-1.5 rounded-full bg-white/8 overflow-hidden">
             <motion.div
@@ -101,19 +102,19 @@ export default function AssessmentPage() {
               {/* Avatar */}
               <div className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center
                 ${msg.role === 'assistant'
-                  ? 'bg-accent1/20 border border-accent1/30'
-                  : 'bg-accent2/20 border border-accent2/30'}`}>
+                  ? 'bg-accent2/20 border border-accent2/30'
+                  : 'bg-accent1/20 border border-accent1/30'}`}>
                 {msg.role === 'assistant'
-                  ? <Bot size={15} className="text-accent1" />
-                  : <User size={15} className="text-accent2" />}
+                  ? <Bot size={15} className="text-accent2" />
+                  : <User size={15} className="text-accent1" />}
               </div>
 
               {/* Bubble */}
               <div className={`max-w-[78%] px-5 py-3.5 rounded-2xl text-sm leading-relaxed
                 ${msg.role === 'assistant'
                   ? 'bg-white/5 border border-white/8 text-primaryText rounded-tl-sm'
-                  : 'bg-accent2/15 border border-accent2/20 text-primaryText rounded-tr-sm'}`}>
-                {msg.content}
+                  : 'bg-accent1/15 border border-accent1/30 text-primaryText rounded-tr-sm'}`}>
+                <MarkdownRenderer content={msg.content} />
               </div>
             </motion.div>
           ))}
@@ -124,13 +125,13 @@ export default function AssessmentPage() {
           {loading && (
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }} className="flex gap-3 mb-6">
-              <div className="w-8 h-8 rounded-full bg-accent1/20 border border-accent1/30
+              <div className="w-8 h-8 rounded-full bg-accent2/20 border border-accent2/30
                               flex items-center justify-center">
-                <Bot size={15} className="text-accent1" />
+                <Bot size={15} className="text-accent2" />
               </div>
               <div className="px-5 py-3.5 rounded-2xl rounded-tl-sm bg-white/5
                               border border-white/8 flex items-center gap-2">
-                <Loader2 size={14} className="text-accent1 animate-spin" />
+                <Loader2 size={14} className="text-accent2 animate-spin" />
                 <span className="text-sm text-primaryText/50">Evaluating your answer…</span>
               </div>
             </motion.div>
@@ -164,7 +165,7 @@ export default function AssessmentPage() {
                        disabled:opacity-30 disabled:cursor-not-allowed
                        hover:bg-accent1/80 transition-colors duration-200"
           >
-            <Send size={17} className="text-background" />
+            <Send size={17} className="text-white" />
           </motion.button>
         </div>
       </div>
