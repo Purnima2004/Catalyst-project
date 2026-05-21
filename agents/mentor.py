@@ -6,7 +6,7 @@ Generates a personalised learning plan using:
   - Skill Knowledge Graph: suggests adjacent skills to learn
   - LLM: formats everything into clean, actionable markdown
 """
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_groq import ChatGroq
 from langchain_core.messages import SystemMessage, HumanMessage
 
 from data.resource_kb import get_resources_for_skill
@@ -23,7 +23,7 @@ _llm = None
 def _get_llm():
     global _llm
     if _llm is None:
-        _llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0.7)
+        _llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.7)
     return _llm
 
 _SYSTEM_PROMPT = """

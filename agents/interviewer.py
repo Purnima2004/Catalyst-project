@@ -4,7 +4,7 @@ Interviewer Agent
 Generates one open-ended, scenario-based interview question per skill.
 Each question targets real-world experience, not trivia.
 """
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_groq import ChatGroq
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 
 from .state import CatalystState
@@ -15,7 +15,7 @@ _llm = None
 def _get_llm():
     global _llm
     if _llm is None:
-        _llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0.8)
+        _llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.8)
     return _llm
 
 _SYSTEM_PROMPT = """

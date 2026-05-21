@@ -7,7 +7,7 @@ Uses the Hybrid Scoring Engine:
   - LLM score    (20%) — qualitative depth assessment
 """
 
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_groq import ChatGroq
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from pydantic import BaseModel, Field
 
@@ -21,7 +21,7 @@ _llm = None
 def _get_llm():
     global _llm
     if _llm is None:
-        _llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0.1)
+        _llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.1)
     return _llm
 
 _SYSTEM_PROMPT = """
@@ -39,7 +39,7 @@ Scoring rubric:
 - 1: Aware of topic but minimal real knowledge
 - 0: Wrong, off-topic, or no answer
 
-Reply with ONLY valid JSON: {{"score": <number 0-5>, "reason": "<one sentence>"}}
+Reply with ONLY valid JSON containing "score" and "reasoning", e.g. {{"score": 4.0, "reasoning": "Candidate gave a strong answer but missed tradeoffs."}}
 """
 
 
@@ -49,11 +49,11 @@ class _LLMEvaluation(BaseModel):
 
 
 
-def _gemini_score(answer: str, skill: str, question: str = "") -> float:
+def _llm_score(answer: str, skill: str, question: str = "") -> float:
     """
     LLM primary scorer — provides the main qualitative assessment.
     """
-    structured_llm = _get_llm().with_structured_output(_LLMEvaluation)
+    structured_llm = _get_llm().with_structured_output(_LLMEvaluation, method="json_mode")
     
     # We now format the system prompt dynamically with the context
     eval_prompt = _SYSTEM_PROMPT.format(
@@ -97,13 +97,13 @@ def run(state: CatalystState) -> dict:
         return {}
 
     # Build a question-aware LLM scorer closure that includes the question context
-    def _gemini_score_with_ctx(answer: str, skill: str) -> float:
-        return _gemini_score(answer, skill, question=question_text)
+    def _llm_score_with_ctx(answer: str, skill: str) -> float:
+        return _llm_score(answer, skill, question=question_text)
 
     # Question-aware hybrid scoring
     scores = score_answer(answer_text, current_skill,
                           question=question_text,
-                          gemini_fn=_gemini_score_with_ctx)
+                          llm_fn=_llm_score_with_ctx)
 
     # Convert 0-1 score back to 0-5 scale for display
     final_5 = round(scores["final_score"] * 5, 2)

@@ -15,16 +15,16 @@ export default function Navbar() {
 
   return (
     <nav className="fixed top-0 inset-x-0 z-50 flex items-center justify-between px-8 py-4
-                    bg-background/80 backdrop-blur-md border-b border-white/5">
+                    bg-background/70 backdrop-blur-lg border-b border-border-subtle">
       {/* Brand */}
-      <Link to="/" className="flex items-center gap-2 group">
-        <div className="w-8 h-8 rounded-lg bg-accent1/20 border border-accent1/40
-                        flex items-center justify-center
-                        group-hover:bg-accent1/30 transition-colors duration-300">
-          <Zap size={16} className="text-accent1" />
+      <Link to="/" className="flex items-center gap-2.5 group">
+        <div className="w-6 h-6 rounded-md bg-panel border border-white/10
+                        flex items-center justify-center transition-all duration-300
+                        group-hover:border-accent1/50">
+          <Zap size={12} className="text-accent1 group-hover:scale-110 transition-transform duration-300" />
         </div>
-        <span className="text-primaryText font-semibold text-lg tracking-tight">
-          Impetus
+        <span className="text-white font-medium text-sm tracking-[0.25em] uppercase transition-all duration-300 group-hover:text-accent1">
+          Impetus<span className="text-accent2 font-bold font-serif">.</span>
         </span>
       </Link>
 
@@ -35,16 +35,21 @@ export default function Navbar() {
           return (
             <Link key={step.path} to={step.path}>
               <motion.div
-                whileHover={{ scale: 1.04 }}
-                whileTap={{ scale: 0.97 }}
-                className={`relative px-4 py-1.5 rounded-full text-sm font-bold
-                            transition-all duration-300
+                whileHover={{ y: -0.5 }}
+                whileTap={{ y: 0 }}
+                className={`relative px-4 py-1 text-[11px] font-mono tracking-widest uppercase transition-all duration-300 cursor-pointer
                             ${active
-                              ? 'text-white bg-accent1 shadow-[0_0_15px_rgba(99,64,255,0.4)]'
-                              : 'text-primaryText/40 hover:text-primaryText hover:bg-white/5'}`}
+                              ? 'text-white font-medium'
+                              : 'text-text-muted/60 hover:text-white'}`}
               >
-                <span className="hidden sm:inline">{step.label}</span>
-                <span className="sm:hidden">{idx + 1}</span>
+                <span>{step.label}</span>
+                {active && (
+                  <motion.div 
+                    layoutId="activeTabBorder"
+                    className="absolute bottom-[-17px] left-3 right-3 h-[1px] bg-accent2"
+                    transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                  />
+                )}
               </motion.div>
             </Link>
           )

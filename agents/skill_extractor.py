@@ -5,7 +5,7 @@ First checks the NetworkX Skill Knowledge Graph to deterministically
 find skills mentioned in the JD. Then uses LLM only for skills the
 graph doesn't know about (fallback).
 """
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_groq import ChatGroq
 from langchain_core.messages import SystemMessage, HumanMessage
 from pydantic import BaseModel, Field
 
@@ -18,7 +18,7 @@ _llm = None
 def _get_llm():
     global _llm
     if _llm is None:
-        _llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0.2)
+        _llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.2)
     return _llm
 
 _SYSTEM_PROMPT = """
@@ -27,7 +27,7 @@ Your only job is to read a Job Description and a Resume, then identify
 the 3-5 MOST IMPORTANT technical skills required by the JD that must be
 assessed in a technical interview. Prioritise skills where the resume
 shows shallow or no evidence of real experience.
-Output ONLY a JSON array of skill names, e.g. ["Django", "PostgreSQL", "Docker"].
+Output ONLY a JSON object containing a "skills" array, e.g. {"skills": ["Django", "PostgreSQL", "Docker"]}.
 """
 
 
@@ -49,7 +49,7 @@ def run(state: CatalystState) -> dict:
         skills = graph_gaps[:5]
     else:
         # LLM fallback for skills the graph doesn't know
-        structured_llm = _get_llm().with_structured_output(_ExtractedSkills)
+        structured_llm = _get_llm().with_structured_output(_ExtractedSkills, method="json_mode")
         prompt = f"{_SYSTEM_PROMPT}\n\nJOB DESCRIPTION:\n{jd}\n\nRESUME:\n{resume}"
         result = structured_llm.invoke([HumanMessage(content=prompt)])
         llm_skills = result.skills

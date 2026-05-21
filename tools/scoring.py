@@ -115,14 +115,14 @@ def quick_gate(answer: str, skill: str) -> float | None:
 
 
 def score_answer(answer: str, skill: str, question: str = "",
-                 gemini_fn=None) -> dict:
+                 llm_fn=None) -> dict:
     """Wrapper so evaluator.py can call a clean interface."""
     return compute_hybrid_score(0.0, skill, answer,
-                                question=question, gemini_fn=gemini_fn)
+                                question=question, llm_fn=llm_fn)
 
 
 def compute_hybrid_score(llm_score: float, skill: str, answer: str,
-                         question: str = "", gemini_fn=None) -> dict:
+                         question: str = "", llm_fn=None) -> dict:
     """
     3-layer scoring:
       1. Quick Gate  — instant score for obvious pass/fail (no LLM call)
@@ -150,8 +150,8 @@ def compute_hybrid_score(llm_score: float, skill: str, answer: str,
     llm_normalized = llm_score / 5.0
     llm_called = False
 
-    if gemini_fn:
-        llm_normalized = gemini_fn(answer, skill)
+    if llm_fn:
+        llm_normalized = llm_fn(answer, skill)
         llm_called = True
 
     weighted = (
