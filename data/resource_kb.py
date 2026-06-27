@@ -254,16 +254,44 @@ def get_resources_for_skill(skill: str, score: float = 0.0, top_k: int = 3) -> l
     return resources[:count]
 
 
-from data.chroma_store import get_semantic_score
+def _resolve_gold_standard(skill: str, target_text: str = "") -> str | None:
+    """Find the best expert reference text for a skill name."""
+    from data.skill_graph import GOLD_STANDARD_ANSWERS
+
+    if skill in GOLD_STANDARD_ANSWERS:
+        return GOLD_STANDARD_ANSWERS[skill]
+
+    skill_lower = skill.lower()
+    for key, value in GOLD_STANDARD_ANSWERS.items():
+        if key.lower() in skill_lower or skill_lower in key.lower():
+            return value
+
+    return target_text or None
+
 
 def get_semantic_similarity(answer: str, skill: str,
                              target_text: str = "") -> float:
     """
-    Compute semantic similarity between the candidate's answer and expert references.
-    
-    Delegates to the ChromaDB multi-reference store. target_text is ignored
-    in the new architecture as we use multiple curated references per skill.
+    Cosine similarity between the candidate's answer and a gold-standard
+    expert answer for the skill. Uses sentence-transformers (no ChromaDB).
     Returns a score in [0.0, 1.0].
     """
-    return get_semantic_score(answer, skill)
+    if not answer.strip():
+        return 0.5
+
+    reference = _resolve_gold_standard(skill, target_text)
+    if not reference:
+        return 0.5
+
+    try:
+        model = _get_model()
+        embeddings = model.encode(
+            [answer, reference],
+            normalize_embeddings=True,
+        )
+        similarity = float(np.dot(embeddings[0], embeddings[1]))
+        return round(max(0.0, min(1.0, similarity)), 3)
+    except Exception as e:
+        print(f"[semantic] Scoring failed for '{skill}': {e}")
+        return 0.5
 
