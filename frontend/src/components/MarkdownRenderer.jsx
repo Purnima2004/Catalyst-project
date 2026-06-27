@@ -1,36 +1,33 @@
 import React from 'react'
 
-export default function MarkdownRenderer({ content = '' }) {
+export default function MarkdownRenderer({ content = '', inverted = false }) {
   if (!content) return null
 
-  // Split by code blocks to isolate formatted code
+  const textMain = inverted ? 'text-white/95' : 'text-ink'
+  const textMuted = inverted ? 'text-white/75' : 'text-ink-muted'
+  const textStrong = inverted ? 'text-white' : 'text-ink'
+  const codeBg = inverted ? 'bg-white/15 border-white/20 text-white' : 'bg-stone-100 border-border text-ink'
+  const headingBorder = inverted ? 'border-white/20' : 'border-border'
+
   const parts = content.split(/(```[\s\S]*?```)/g)
 
   return (
-    <div className="space-y-3.5 text-[14px] leading-relaxed text-primaryText/90">
+    <div className={`space-y-3 text-sm leading-relaxed ${textMain}`}>
       {parts.map((part, index) => {
         if (part.startsWith('```')) {
-          // Extract language and code block content
           const match = part.match(/```(\w*)\n([\s\S]*?)```/)
-          const lang = match ? match[1] : ''
           const code = match ? match[2] : part.slice(3, -3)
 
           return (
-            <div key={index} className="my-4 rounded-xl overflow-hidden border border-white/10 shadow-lg">
-              {lang && (
-                <div className="bg-white/5 px-4 py-1.5 text-xs text-primaryText/40 border-b border-white/5 font-mono select-none flex justify-between items-center">
-                  <span>{lang.toUpperCase()}</span>
-                  <span className="text-[10px]">Code Block</span>
-                </div>
-              )}
-              <pre className="bg-[#05060f] p-4 overflow-x-auto font-mono text-xs text-[#a5b4fc] leading-relaxed">
-                <code>{code.trim()}</code>
-              </pre>
-            </div>
+            <pre
+              key={index}
+              className={`my-3 rounded-lg border p-3 overflow-x-auto text-xs font-mono leading-relaxed ${codeBg}`}
+            >
+              <code>{code.trim()}</code>
+            </pre>
           )
         }
 
-        // Parse blocks robustly line by line
         const lines = part.split('\n')
         const blocks = []
         let currentParagraph = []
@@ -49,11 +46,9 @@ export default function MarkdownRenderer({ content = '' }) {
             continue
           }
 
-          // Fix common LLM markdown glitches like "Weekly Goal:*"
           line = line.replace(/:\* /g, ': ')
           line = line.replace(/:\*/g, ': ')
 
-          // Check heading
           const headingMatch = line.match(/^(#{1,6})\s+(.*)$/)
           if (headingMatch) {
             flushParagraph()
@@ -61,21 +56,19 @@ export default function MarkdownRenderer({ content = '' }) {
             continue
           }
 
-          // Check list item
           if (line.startsWith('- ') || line.startsWith('* ')) {
             flushParagraph()
             const listItems = []
             while (i < lines.length) {
               const li = lines[i].trim()
               if (li.startsWith('- ') || li.startsWith('* ')) {
-                // Fix missing spaces after * like "*Item"
                 listItems.push(li.replace(/^[-*]\s*/, ''))
                 i++
               } else {
                 break
               }
             }
-            i-- // step back
+            i--
             blocks.push({ type: 'list', items: listItems })
             continue
           }
@@ -85,23 +78,23 @@ export default function MarkdownRenderer({ content = '' }) {
         flushParagraph()
 
         return (
-          <div key={index} className="space-y-4">
+          <div key={index} className="space-y-3">
             {blocks.map((block, bIdx) => {
               if (block.type === 'heading') {
-                const classes = block.level === 1 ? 'font-serif italic text-xl sm:text-2xl font-semibold text-white mt-8 mb-4 border-b border-white/5 pb-2 tracking-wide' 
-                              : block.level === 2 ? 'font-serif italic text-lg sm:text-xl font-medium text-white mt-6 mb-3' 
-                              : block.level === 3 ? 'text-xs font-semibold text-accent2 uppercase tracking-wider mt-5 mb-2 font-mono'
-                              : 'text-xs font-semibold text-accent1 uppercase tracking-wider mt-4 mb-2 font-mono'
-                return React.createElement(`h${block.level}`, { key: bIdx, className: classes }, parseInlineFormatting(block.content))
+                const classes = block.level === 1
+                  ? `font-serif text-xl font-semibold ${textStrong} mt-6 mb-3 pb-2 border-b ${headingBorder}`
+                  : block.level === 2
+                    ? `text-base font-semibold ${textStrong} mt-5 mb-2`
+                    : `text-sm font-semibold ${textStrong} mt-4 mb-1`
+                return React.createElement(`h${block.level}`, { key: bIdx, className: classes }, parseInlineFormatting(block.content, inverted))
               }
-              
+
               if (block.type === 'list') {
                 return (
-                  <ul key={bIdx} className="list-none space-y-3.5 my-4 text-text-muted">
+                  <ul key={bIdx} className={`list-disc pl-5 space-y-1.5 my-2 ${textMuted}`}>
                     {block.items.map((item, liIdx) => (
-                      <li key={liIdx} className="leading-relaxed pl-5 relative text-xs font-light">
-                        <span className="absolute left-0 top-[6px] w-1.5 h-1.5 rounded-full border border-accent1 bg-accent1/25 shrink-0" />
-                        {parseInlineFormatting(item)}
+                      <li key={liIdx} className="leading-relaxed">
+                        {parseInlineFormatting(item, inverted)}
                       </li>
                     ))}
                   </ul>
@@ -109,8 +102,8 @@ export default function MarkdownRenderer({ content = '' }) {
               }
 
               return (
-                <p key={bIdx} className="text-text-muted text-xs leading-relaxed mb-4 font-light">
-                  {parseInlineFormatting(block.content)}
+                <p key={bIdx} className={`${textMuted} leading-relaxed`}>
+                  {parseInlineFormatting(block.content, inverted)}
                 </p>
               )
             })}
@@ -121,19 +114,25 @@ export default function MarkdownRenderer({ content = '' }) {
   )
 }
 
-function parseInlineFormatting(text) {
-  // Split on bold (**), italics (*), and inline code (`) tokens
+function parseInlineFormatting(text, inverted) {
   const tokens = text.split(/(\*\*.*?\*\*|`.*?`|\*.*?\*)/g)
-  
+
   return tokens.map((token, idx) => {
     if (token.startsWith('**') && token.endsWith('**')) {
-      return <strong key={idx} className="font-semibold text-white tracking-wide">{token.slice(2, -2)}</strong>
+      return <strong key={idx} className={`font-semibold ${inverted ? 'text-white' : 'text-ink'}`}>{token.slice(2, -2)}</strong>
     }
     if (token.startsWith('*') && token.endsWith('*')) {
-      return <em key={idx} className="font-serif italic text-white/95">{token.slice(1, -1)}</em>
+      return <em key={idx}>{token.slice(1, -1)}</em>
     }
     if (token.startsWith('`') && token.endsWith('`')) {
-      return <code key={idx} className="bg-white/5 border border-white/10 px-1.5 py-0.5 rounded font-mono text-[10px] text-accent2">{token.slice(1, -1)}</code>
+      return (
+        <code
+          key={idx}
+          className={`px-1 py-0.5 rounded text-xs font-mono ${inverted ? 'bg-white/15 text-white' : 'bg-stone-100 text-ink'}`}
+        >
+          {token.slice(1, -1)}
+        </code>
+      )
     }
     return token
   })

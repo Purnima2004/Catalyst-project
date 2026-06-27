@@ -4,34 +4,27 @@
 
 @layer base {
   body {
-    font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
-    @apply bg-background text-primaryText antialiased;
+    font-family: Inter, system-ui, sans-serif;
+    @apply bg-background text-ink antialiased;
   }
 
-  /* Custom scrollbar */
   ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 8px;
+    height: 8px;
   }
   ::-webkit-scrollbar-track {
-    background: rgba(7, 8, 14, 0.6);
+    background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.08);
+    background: #d6d3d1;
     border-radius: 99px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.16);
+    background: #a8a29e;
   }
 
-  /* Text selection */
   ::selection {
-    background: rgba(59, 130, 246, 0.25);
-    color: #FFFFFF;
-  }
-
-  h1, h2, h3, h4, h5, h6 {
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    letter-spacing: -0.02em;
+    background: rgba(29, 78, 216, 0.15);
+    color: #1c1917;
   }
 }

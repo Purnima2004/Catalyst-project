@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Send, Loader2, Bot, User, ChevronRight, CheckCircle2, Circle, PlayCircle, Terminal, HelpCircle } from 'lucide-react'
+import { Send, Loader2, CheckCircle2, Circle } from 'lucide-react'
 import Navbar from '../components/Navbar.jsx'
 import { sendChat } from '../services/api.js'
 import MarkdownRenderer from '../components/MarkdownRenderer.jsx'
@@ -32,7 +31,6 @@ export default function AssessmentPage() {
     setInput('')
     setLoading(true)
 
-    // Optimistically add user message
     setState(prev => ({
       ...prev,
       messages: [...(prev?.messages || []), { role: 'user', content: userMsg }],
@@ -58,203 +56,124 @@ export default function AssessmentPage() {
   const progress = skills_to_assess.length > 0
     ? Math.round((current_skill_index / skills_to_assess.length) * 100)
     : 0
-  const currentSkill = skills_to_assess[current_skill_index]
 
   return (
-    <div className="min-h-screen text-primaryText flex flex-col selection:bg-accent1/35 selection:text-white">
+    <div className="min-h-screen flex flex-col">
       <Navbar />
 
-      {/* Main Workspace split */}
-      <div className="flex-1 flex flex-col lg:flex-row pt-[60px] min-h-[calc(100vh-60px)]">
-        
-        {/* LEFT PANEL: Assessment Intelligence Sidebar */}
-        <aside className="w-full lg:w-[320px] bg-panel border-b lg:border-b-0 lg:border-r border-white/5 flex flex-col shrink-0">
-          {/* Top Progress block */}
-          <div className="p-6 border-b border-white/5 space-y-4 relative">
-            <div className="absolute inset-[1px] rounded-[11px] border border-white/[0.01] pointer-events-none" />
-            
-            <div className="flex justify-between items-center text-[10px] font-mono text-text-muted uppercase tracking-widest">
-              <span>Overall Progress</span>
-              <span>{progress}%</span>
-            </div>
-
-            <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
-              <motion.div
-                className="h-full rounded-full bg-gradient-to-r from-accent1 via-accent2 to-accent1"
-                initial={{ width: 0 }}
-                animate={{ width: `${progress}%` }}
-                transition={{ duration: 0.8, ease: 'easeOut' }}
+      <div className="flex-1 flex flex-col lg:flex-row pt-14 min-h-[calc(100vh-3.5rem)]">
+        {/* Sidebar */}
+        <aside className="w-full lg:w-64 border-b lg:border-b-0 lg:border-r border-border bg-surface shrink-0">
+          <div className="p-5 border-b border-border">
+            <p className="text-xs text-ink-faint mb-2">Progress</p>
+            <div className="h-2 rounded-full bg-stone-100 overflow-hidden mb-1">
+              <div
+                className="h-full rounded-full bg-accent transition-all duration-500"
+                style={{ width: `${progress}%` }}
               />
             </div>
-            
-            <p className="text-[10px] text-text-muted/70 font-light">
-              Assessing core competencies parsed from credentials.
+            <p className="text-xs text-ink-muted">
+              {current_skill_index} of {skills_to_assess.length} skills
             </p>
           </div>
 
-          {/* Target Skills Checklist */}
-          <div className="flex-1 p-6 space-y-4 overflow-y-auto">
-            <h3 className="text-[10px] font-mono tracking-widest text-white uppercase font-semibold">Skill assessment matrix</h3>
-            
-            <div className="space-y-2">
+          <div className="p-5">
+            <p className="text-xs font-medium text-ink-muted uppercase tracking-wide mb-3">Skills</p>
+            <ul className="space-y-2">
               {skills_to_assess.map((skill, idx) => {
-                const isAssessed = idx < current_skill_index
-                const isActive = idx === current_skill_index
-                const isPending = idx > current_skill_index
-
+                const done = idx < current_skill_index
+                const active = idx === current_skill_index
                 return (
-                  <div
+                  <li
                     key={skill}
-                    className={`flex items-center gap-3 p-3 rounded-lg border transition-all duration-300
-                      ${isActive 
-                        ? 'bg-accent1/5 border-accent1/25 text-white' 
-                        : isAssessed
-                          ? 'bg-cta/[0.02] border-cta/15 text-cta/80'
-                          : 'bg-white/[0.01] border-white/5 text-text-muted/50'}`}
+                    className={`flex items-center gap-2.5 text-sm rounded-lg px-2.5 py-2
+                      ${active ? 'bg-accent-soft text-accent font-medium' : 'text-ink-muted'}`}
                   >
-                    <div className="shrink-0">
-                      {isAssessed ? (
-                        <CheckCircle2 size={13} className="text-cta" />
-                      ) : isActive ? (
-                        <PlayCircle size={13} className="text-accent1 animate-pulse" />
-                      ) : (
-                        <Circle size={13} className="text-text-muted/30" />
-                      )}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-semibold tracking-wide truncate">{skill}</p>
-                      <p className="text-[9px] font-mono uppercase tracking-wider mt-0.5 opacity-60">
-                        {isAssessed ? 'Assessed' : isActive ? 'Active Assessment' : 'Pending'}
-                      </p>
-                    </div>
-                  </div>
+                    {done ? (
+                      <CheckCircle2 size={15} className="text-success shrink-0" />
+                    ) : (
+                      <Circle size={15} className={`shrink-0 ${active ? 'text-accent' : 'text-stone-300'}`} />
+                    )}
+                    <span className="truncate">{skill}</span>
+                  </li>
                 )
               })}
-            </div>
+            </ul>
           </div>
         </aside>
 
-        {/* RIGHT PANEL: Conversation Timeline & Input */}
-        <main className="flex-1 flex flex-col bg-background relative">
-          
-          {/* Scrollable Conversation timeline */}
-          <div className="flex-1 overflow-y-auto px-6 pt-8 pb-32 max-w-3xl w-full mx-auto space-y-8">
-            
-            {/* Header info */}
-            <div className="pb-4 border-b border-white/5 flex items-center justify-between text-xs text-text-muted/60">
-              <div className="flex items-center gap-1.5 font-mono">
-                <Terminal size={12} className="text-accent1" />
-                <span>[session-active] evaluation terminal</span>
-              </div>
-              <span>Catalyst v1.4</span>
-            </div>
+        {/* Chat */}
+        <main className="flex-1 flex flex-col bg-background min-h-0">
+          <div className="flex-1 overflow-y-auto px-5 py-6 max-w-2xl w-full mx-auto">
+            {messages.length === 0 && (
+              <p className="text-sm text-ink-muted text-center py-12">
+                Your first question is loading…
+              </p>
+            )}
 
-            <AnimatePresence initial={false}>
+            <div className="space-y-6">
               {messages.map((msg, i) => {
-                const isAssistant = msg.role === 'assistant'
+                const isInterviewer = msg.role === 'assistant'
                 return (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, ease: [0.19, 1, 0.22, 1] }}
-                    className="flex gap-4 items-start"
-                  >
-                    {/* Avatar icon */}
-                    <div className={`shrink-0 w-8 h-8 rounded-lg flex items-center justify-center border font-mono text-[10px] font-bold mt-0.5
-                      ${isAssistant
-                        ? 'bg-panel border-white/10 text-accent2'
-                        : 'bg-accent1/5 border-accent1/20 text-accent1'}`}
+                  <div key={i} className={`flex ${isInterviewer ? 'justify-start' : 'justify-end'}`}>
+                    <div
+                      className={`max-w-[90%] rounded-2xl px-4 py-3 text-sm leading-relaxed
+                        ${isInterviewer
+                          ? 'bg-surface border border-border text-ink rounded-tl-sm shadow-card'
+                          : 'bg-ink text-white rounded-tr-sm'}`}
                     >
-                      {isAssistant ? <Bot size={14} className="text-accent2" /> : <User size={14} className="text-accent1" />}
+                      {isInterviewer && (
+                        <p className="text-xs font-medium text-ink-faint mb-1.5">Interviewer</p>
+                      )}
+                      <MarkdownRenderer content={msg.content} inverted={!isInterviewer} />
                     </div>
-
-                    {/* Content Block */}
-                    <div className="flex-1 space-y-1.5 min-w-0">
-                      <div className="flex justify-between items-center text-[10px] font-mono text-text-muted">
-                        <span className="uppercase font-semibold tracking-wider">
-                          {isAssistant ? 'Assessor Engine' : 'Candidate'}
-                        </span>
-                        <span>{i === 0 ? 'Start' : `Msg #${i}`}</span>
-                      </div>
-                      
-                      {/* Message Bubble container */}
-                      <div className={`text-xs leading-relaxed font-light p-4 rounded-xl border
-                        ${isAssistant
-                          ? 'bg-panel border-white/5 text-white/90'
-                          : 'bg-white/[0.01] border-white/5 text-white'}`}
-                      >
-                        <MarkdownRenderer content={msg.content} />
-                      </div>
-                    </div>
-                  </motion.div>
+                  </div>
                 )
               })}
-            </AnimatePresence>
 
-            {/* Thinking evaluation indicator */}
-            <AnimatePresence>
               {loading && (
-                <motion.div 
-                  initial={{ opacity: 0, y: 8 }} 
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }} 
-                  className="flex gap-4 items-start"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-panel border border-white/10 flex items-center justify-center shrink-0 mt-0.5">
-                    <Loader2 size={13} className="text-accent2 animate-spin" />
-                  </div>
-                  <div className="flex-1 space-y-1.5">
-                    <div className="flex justify-between items-center text-[10px] font-mono text-text-muted">
-                      <span className="uppercase font-semibold tracking-wider">Assessor Engine</span>
-                      <span className="text-accent2 animate-pulse">Evaluating answer...</span>
-                    </div>
-                    <div className="p-4 rounded-xl border border-white/5 bg-panel text-xs text-text-muted/60 font-light flex items-center gap-2">
-                      <Loader2 size={12} className="animate-spin text-accent1" />
-                      Evaluating quantitative feedback and semantic skill match...
+                <div className="flex justify-start">
+                  <div className="bg-surface border border-border rounded-2xl rounded-tl-sm px-4 py-3 shadow-card">
+                    <div className="flex items-center gap-2 text-sm text-ink-muted">
+                      <Loader2 size={14} className="animate-spin text-accent" />
+                      Reviewing your answer…
                     </div>
                   </div>
-                </motion.div>
+                </div>
               )}
-            </AnimatePresence>
-
+            </div>
             <div ref={bottomRef} />
           </div>
 
-          {/* Typing Workspace Input bar */}
-          <div className="absolute bottom-0 inset-x-0 bg-background/80 backdrop-blur-lg border-t border-white/5 p-4 z-20">
-            <div className="max-w-3xl mx-auto flex gap-3 items-end">
-              <div className="flex-1 relative border border-white/10 rounded-lg overflow-hidden bg-black/20 focus-within:border-accent1/40 transition-colors duration-300">
-                <textarea
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault()
-                      sendMessage()
-                    }
-                  }}
-                  rows={2}
-                  placeholder="Type your structured answer here... Press Enter to submit"
-                  disabled={loading}
-                  className="w-full bg-transparent p-3 text-white text-xs leading-relaxed resize-none
-                             placeholder-text-muted/40 outline-none font-light disabled:opacity-50"
-                />
-              </div>
-
-              <motion.button
-                whileHover={{ y: -1 }}
-                whileTap={{ y: 0 }}
+          {/* Input */}
+          <div className="border-t border-border bg-surface p-4">
+            <div className="max-w-2xl mx-auto flex gap-2 items-end">
+              <textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault()
+                    sendMessage()
+                  }
+                }}
+                rows={2}
+                placeholder="Type your answer… (Enter to send, Shift+Enter for new line)"
+                disabled={loading}
+                className="flex-1 rounded-lg border border-border-strong bg-stone-50/50 px-3 py-2.5 text-sm text-ink resize-none
+                           placeholder:text-ink-faint outline-none focus:border-accent focus:ring-2 focus:ring-accent/10
+                           disabled:opacity-50"
+              />
+              <button
                 onClick={sendMessage}
                 disabled={!input.trim() || loading}
-                className="w-10 h-10 rounded-lg bg-accent1 flex items-center justify-center shrink-0 border border-accent1
-                           disabled:opacity-30 disabled:cursor-not-allowed hover:bg-accent1/90 transition-colors duration-200"
+                className="w-10 h-10 rounded-lg bg-accent text-white flex items-center justify-center shrink-0
+                           hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
-                <Send size={14} className="text-white" />
-              </motion.button>
+                <Send size={16} />
+              </button>
             </div>
           </div>
-
         </main>
       </div>
     </div>

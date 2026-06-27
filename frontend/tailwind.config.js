@@ -7,32 +7,28 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['"Plus Jakarta Sans"', 'Inter', 'sans-serif'],
-        serif: ['Fraunces', 'serif'],
-        mono: ['"JetBrains Mono"', 'monospace'],
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        serif: ['"Source Serif 4"', 'Georgia', 'serif'],
       },
       colors: {
-        background: '#07080e',
-        primaryText: '#F8FAFC',
-        accent1: '#3b82f6',     // Premium Ice Blue
-        accent2: '#f59e0b',     // Refined Amber/Gold
-        cta: '#10b981',         // Pristine Emerald / Mint
-        panel: '#0f121d',       // Sleek Graphite Panel
-        'panel-hover': '#151928',
-        'border-subtle': 'rgba(255,255,255,0.06)',
-        'text-muted': '#94a3b8',
+        background: '#f7f6f3',
+        surface: '#ffffff',
+        ink: '#1c1917',
+        'ink-muted': '#57534e',
+        'ink-faint': '#a8a29e',
+        border: '#e7e5e4',
+        'border-strong': '#d6d3d1',
+        accent: '#1d4ed8',
+        'accent-soft': '#eff6ff',
+        success: '#15803d',
+        'success-soft': '#f0fdf4',
+        warn: '#b45309',
+        'warn-soft': '#fffbeb',
       },
-      animation: {
-        blob: "blob 10s infinite",
+      boxShadow: {
+        card: '0 1px 2px rgba(28, 25, 23, 0.04), 0 4px 16px rgba(28, 25, 23, 0.06)',
+        lift: '0 2px 8px rgba(28, 25, 23, 0.08), 0 12px 32px rgba(28, 25, 23, 0.06)',
       },
-      keyframes: {
-        blob: {
-          "0%": { transform: "translate(0px, 0px) scale(1)" },
-          "33%": { transform: "translate(30px, -50px) scale(1.05)" },
-          "66%": { transform: "translate(-20px, 20px) scale(0.95)" },
-          "100%": { transform: "translate(0px, 0px) scale(1)" },
-        },
-      }
     },
   },
   plugins: [],

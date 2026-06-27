@@ -9,7 +9,7 @@ import AuroraBackground from './components/AuroraBackground.jsx'
 function App() {
   return (
     <BrowserRouter>
-      <div className="min-h-screen text-primaryText font-sans selection:bg-accent1 selection:text-white relative">
+      <div className="min-h-screen font-sans relative">
         <AuroraBackground />
         <div className="relative z-10">
           <Routes>

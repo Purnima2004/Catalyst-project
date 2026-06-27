@@ -11,6 +11,9 @@ class SkillEvaluation(TypedDict):
     final_score: float
     proficiency: str
     reasoning: str
+    level: str
+    llm_called: bool
+
 
 
 class CatalystState(TypedDict):
