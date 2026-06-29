@@ -51,7 +51,7 @@ export default function LandingPage() {
               <ArrowRight size={16} />
             </button>
             <a
-              href="https://github.com/Purnima2004/Impetus-project"
+              href="https://github.com/Purnima2004/Catalyst-project"
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center px-6 py-3 rounded-lg border border-white/60 bg-white/40 backdrop-blur-sm text-sm font-medium text-ink-muted hover:text-ink hover:bg-white/60 transition-colors"

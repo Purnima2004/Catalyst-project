@@ -20,6 +20,9 @@ ENV/
 .env.*
 !.env.example
 
+# Personal files — do not commit resumes
+*.pdf
+
 # ChromaDB — large local vector database, regenerated on first run
 chroma_db/
 
